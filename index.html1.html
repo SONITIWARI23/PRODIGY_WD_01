@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Navigation</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --nav-bg-init: transparent;
+    --nav-bg-scroll: rgba(10, 10, 10, 0.97);
+    --accent: #e8c97a;
+    --accent-dim: rgba(232, 201, 122, 0.15);
+    --text-light: #f5f0e8;
+    --text-muted: rgba(245, 240, 232, 0.45);
+    --transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 28px 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--nav-bg-init);
+    border-bottom: 1px solid transparent;
+    transition: background var(--transition),
+                border-color var(--transition),
+                padding var(--transition),
+                backdrop-filter var(--transition);
+  }
+
+  nav.scrolled {
+    padding: 18px 56px;
+    background: var(--nav-bg-scroll);
+    border-color: rgba(232, 201, 122, 0.12);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--text-light);
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    position: relative;
+  }
+
+  .nav-logo span {
+    color: var(--accent);
+  }
+
+  .nav-links {
+    display: flex;
+    list-style: none;
+    gap: 0;
+  }
+
+  .nav-links li {
+    position: relative;
+  }
+
+  .nav-links a {
+    display: block;
+    padding: 10px 22px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Animated underline bar */
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 22px;
+    right: 22px;
+    height: 1px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Hover glow background */
+  .nav-links a::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent-dim);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    border-radius: 3px;
+  }
+
+  .nav-links a:hover {
+    color: var(--accent);
+  }
+
+  .nav-links a:hover::after {
+    transform: scaleX(1);
+  }
+
+  .nav-links a:hover::before {
+    opacity: 1;
+  }
+
+  /* Active state */
+  .nav-links a.active {
+    color: var(--accent);
+  }
+
+  .nav-links a.active::after {
+    transform: scaleX(1);
+  }
+
+  /* Scrolled state — links get brighter */
+  nav.scrolled .nav-links a {
+    color: rgba(245, 240, 232, 0.65);
+  }
+
+  nav.scrolled .nav-links a:hover,
+  nav.scrolled .nav-links a.active {
+    color: var(--accent);
+  }
+
+  /* CTA Button */
+  .nav-cta {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent) !important;
+    border: 1px solid var(--accent) !important;
+    padding: 9px 22px !important;
+    border-radius: 2px;
+    transition: background 0.3s ease, color 0.3s ease !important;
+  }
+
+  .nav-cta:hover {
+    background: var(--accent) !important;
+    color: #0a0a0a !important;
+  }
+
+  .nav-cta::before, .nav-cta::after {
+    display: none !important;
+  }
+
+  /* Scroll indicator */
+  .scroll-indicator {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), #f0a060);
+    z-index: 200;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  /* ── PAGE CONTENT ── */
+  body {
+    background: #080808;
+    color: var(--text-light);
+    font-family: 'DM Mono', monospace;
+  }
+
+  section {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 56px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  section:nth-child(odd) {
+    background: #080808;
+  }
+
+  section:nth-child(even) {
+    background: #0f0f0f;
+  }
+
+  .section-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    opacity: 0.8;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: var(--text-light);
+    text-align: center;
+    max-width: 900px;
+  }
+
+  .section-title em {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  .section-body {
+    margin-top: 32px;
+    max-width: 520px;
+    text-align: center;
+    font-size: 0.82rem;
+    line-height: 1.9;
+    color: var(--text-muted);
+  }
+
+  /* Decorative orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+    opacity: 0.18;
+  }
+
+  .orb-gold { background: #e8c97a; width: 500px; height: 500px; top: -100px; right: -100px; }
+  .orb-rust { background: #d4704a; width: 400px; height: 400px; bottom: -80px; left: -80px; }
+  .orb-teal { background: #5ab8a8; width: 350px; height: 350px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+  /* Mobile hamburger */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    padding: 4px;
+    background: none;
+    border: none;
+  }
+
+  .hamburger span {
+    display: block;
+    width: 24px;
+    height: 1.5px;
+    background: var(--text-light);
+    transition: all 0.3s ease;
+    transform-origin: center;
+  }
+
+  .hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+  @media (max-width: 768px) {
+    nav { padding: 22px 28px; }
+    nav.scrolled { padding: 16px 28px; }
+
+    .hamburger { display: flex; }
+
+    .nav-links {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: 280px;
+      background: #0a0a0a;
+      flex-direction: column;
+      padding: 100px 40px 60px;
+      gap: 8px;
+      border-left: 1px solid rgba(232, 201, 122, 0.12);
+      transform: translateX(100%);
+      transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .nav-links.open { transform: translateX(0); }
+
+    .nav-links a {
+      font-size: 0.85rem;
+      padding: 14px 0;
+    }
+
+    .nav-links a::after {
+      left: 0; right: auto;
+      width: 40px;
+      bottom: 10px;
+    }
+
+    .nav-cta { margin-top: 16px; display: inline-block; }
+
+    section { padding: 120px 28px 80px; }
+    .section-title { font-size: clamp(2.2rem, 12vw, 4rem); }
+  }
+</style>
+</head>
+<body>
+
+<div class="scroll-indicator" id="scrollBar"></div>
+
+<nav id="navbar">
+  <a href="#home" class="nav-logo">Arc<span>.</span>Studio</a>
+
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#home" class="active" data-section="home">Home</a></li>
+    <li><a href="#work" data-section="work">Work</a></li>
+    <li><a href="#process" data-section="process">Process</a></li>
+    <li><a href="#about" data-section="about">About</a></li>
+    <li><a href="#contact" class="nav-cta">Contact</a></li>
+  </ul>
+
+  <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Sections -->
+<section id="home">
+  <div class="orb orb-gold"></div>
+  <div class="section-label">Est. 2024 — Creative Studio</div>
+  <h1 class="section-title">Design that <em>moves</em> people forward</h1>
+  <p class="section-body">We craft digital experiences that sit at the intersection of craft, clarity, and culture. Scroll to explore, hover to discover.</p>
+</section>
+
+<section id="work">
+  <div class="orb orb-rust"></div>
+  <div class="section-label">Selected Projects</div>
+  <h2 class="section-title">Our <em>Work</em></h2>
+  <p class="section-body">A curated selection of brand identities, digital products, and spatial experiences from our archive of collaborations.</p>
+</section>
+
+<section id="process">
+  <div class="orb orb-teal"></div>
+  <div class="section-label">How We Think</div>
+  <h2 class="section-title">The <em>Process</em></h2>
+  <p class="section-body">Every project begins with deep listening. We map the territory, find the tension, then resolve it into something that feels inevitable.</p>
+</section>
+
+<section id="about">
+  <div class="orb orb-gold"></div>
+  <div class="section-label">Who We Are</div>
+  <h2 class="section-title"><em>About</em> the Studio</h2>
+  <p class="section-body">A small, deliberate team of designers, strategists, and builders united by a belief that great design changes behavior, not just perception.</p>
+</section>
+
+<section id="contact">
+  <div class="orb orb-rust"></div>
+  <div class="section-label">Let's Talk</div>
+  <h2 class="section-title">Start a <em>Conversation</em></h2>
+  <p class="section-body">Have a project in mind? We'd love to hear about it. Send us a message and we'll get back to you within one business day.</p>
+</section>
+
+<script>
+  const navbar = document.getElementById('navbar');
+  const scrollBar = document.getElementById('scrollBar');
+  const hamburger = document.getElementById('hamburger');
+  const navLinks = document.getElementById('navLinks');
+  const allLinks = document.querySelectorAll('.nav-links a[data-section]');
+  const sections = document.querySelectorAll('section[id]');
+
+  // ── Scroll: navbar style + progress bar ──
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = (scrollTop / docHeight) * 100;
+
+    scrollBar.style.width = progress + '%';
+
+    if (scrollTop > 60) {
+      navbar.classList.add('scrolled');
+    } else {
+      navbar.classList.remove('scrolled');
+    }
+
+    // Active section tracking
+    let current = '';
+    sections.forEach(sec => {
+      if (scrollTop >= sec.offsetTop - 120) {
+        current = sec.id;
+      }
+    });
+
+    allLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.dataset.section === current) {
+        link.classList.add('active');
+      }
+    });
+  });
+
+  // ── Hamburger mobile toggle ──
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('open');
+    navLinks.classList.toggle('open');
+  });
+
+  // Close mobile menu on link click
+  navLinks.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      hamburger.classList.remove('open');
+      navLinks.classList.remove('open');
+    });
+  });
+
+  // ── Smooth scroll for anchor links ──
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(anchor.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  });
+</script>
+</body>
+</html>
